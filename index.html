@@ -1065,7 +1065,7 @@
 
 
 
-  
+
 
 
   <footer class="footer">
@@ -1099,6 +1099,79 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      // Initialize lazy loading for all videos
+      document.querySelectorAll('.lazy-video').forEach(function (video) {
+        if (video.dataset.src) {
+          // Create an observer for each video
+          const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                // When video is in viewport, set the source and add loading indicator
+                const videoElement = entry.target;
+                const wrapper = videoElement.closest('.video-wrapper');
+
+                if (wrapper) {
+                  const spinner = wrapper.querySelector('.video-spinner');
+                  if (spinner) spinner.style.display = 'block';
+                }
+
+                // Set the source with cache busting to avoid LFS issues
+                videoElement.src = videoElement.dataset.src + '?v=' + new Date().getTime();
+
+                // Handle video loading events
+                videoElement.addEventListener('loadeddata', function () {
+                  if (wrapper) {
+                    const spinner = wrapper.querySelector('.video-spinner');
+                    if (spinner) spinner.style.display = 'none';
+                  }
+                });
+
+                videoElement.addEventListener('error', function (e) {
+                  console.error('Error loading video:', videoElement.dataset.src, e);
+                  if (wrapper) {
+                    const spinner = wrapper.querySelector('.video-spinner');
+                    if (spinner) {
+                      spinner.textContent = 'Video failed to load';
+                      spinner.style.color = 'red';
+                    }
+                  }
+                });
+
+                // Stop observing once loaded
+                observer.unobserve(videoElement);
+              }
+            });
+          }, { threshold: 0.1 });
+
+          observer.observe(video);
+        }
+      });
+
+      // Add CSS for video spinners
+      const style = document.createElement('style');
+      style.textContent = `
+        .video-spinner {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 40px;
+          height: 40px;
+          border: 4px solid rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          border-top: 4px solid #fff;
+          animation: spin 1s linear infinite;
+          display: none;
+        }
+        
+        @keyframes spin {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // YouTube video thumbnail handler
       const videoContainer = document.querySelector('.video-container');
       const thumbnail = document.getElementById('video-thumbnail');
       const playButton = document.querySelector('.play-button');
@@ -1109,7 +1182,7 @@
 
         // Set video attributes
         video.controls = true;
-        video.autoplay = false; // Change to false initially
+        video.autoplay = false;
         video.preload = "auto";
         video.playsInline = true;
         video.setAttribute('controlsList', 'nodownload');
@@ -1123,13 +1196,8 @@
 
         // Add loading indicator
         const loadingSpinner = document.createElement('div');
-        loadingSpinner.className = 'loading-spinner';
-        loadingSpinner.style.position = 'absolute';
-        loadingSpinner.style.top = '50%';
-        loadingSpinner.style.left = '50%';
-        loadingSpinner.style.transform = 'translate(-50%, -50%)';
-        loadingSpinner.style.color = 'white';
-        loadingSpinner.textContent = 'Loading video...';
+        loadingSpinner.className = 'video-spinner';
+        loadingSpinner.style.display = 'block';
 
         // Replace thumbnail with video and loading indicator
         videoContainer.innerHTML = '';
@@ -1140,12 +1208,10 @@
         video.src = './static/videos/steerable_scene_gen_overview_video_high_quality.mp4?v=' + new Date().getTime();
 
         // Wait for metadata to load before enabling controls
-        video.addEventListener('loadedmetadata', function () {
-          console.log('Metadata loaded, duration:', video.duration);
+        video.addEventListener('loadeddata', function () {
+          console.log('Video loaded, duration:', video.duration);
           // Remove loading indicator
-          if (loadingSpinner.parentNode) {
-            loadingSpinner.parentNode.removeChild(loadingSpinner);
-          }
+          loadingSpinner.style.display = 'none';
 
           // Wait a bit more to ensure everything is ready
           setTimeout(() => {
@@ -1157,13 +1223,16 @@
         // Handle errors
         video.addEventListener('error', function (e) {
           console.error('Video error:', e);
-          alert('Error loading video. Please try refreshing the page.');
+          loadingSpinner.textContent = 'Video failed to load';
+          loadingSpinner.style.border = 'none';
+          loadingSpinner.style.animation = 'none';
+          loadingSpinner.style.color = 'red';
         });
       }
 
       // Add click event to both thumbnail and play button
-      thumbnail.addEventListener('click', loadVideo);
-      playButton.addEventListener('click', loadVideo);
+      if (thumbnail) thumbnail.addEventListener('click', loadVideo);
+      if (playButton) playButton.addEventListener('click', loadVideo);
     });
   </script>
 
