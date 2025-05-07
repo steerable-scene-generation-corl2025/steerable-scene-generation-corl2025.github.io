@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Steerable Scene Generation with Post Training and Inference-Time Search">
+  <meta name="keywords" content="Scene Generation, Simulation, Diffusion, MCTS">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tags for link preview -->
+  <meta property="og:title" content="Steerable Scene Generation with Post Training and Inference-Time Search" />
+  <meta property="og:description"
+    content="Generate task-relevant scenes for robotic manipulation with post training, conditional generation, or inference-time search." />
+  <meta property="og:image" content="https://steerable-scene-generation-corl2025.github.io/static/images/teaser.webp" />
+  <meta property="og:url" content="https://steerable-scene-generation-corl2025.github.io/" />
+  <meta property="og:type" content="website" />
+
+  <link rel="icon" type="image/png" href="static/favicon/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="static/favicon/favicon.svg" />
+  <link rel="shortcut icon" href="static/favicon/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="static/favicon/apple-touch-icon.png" />
+
+  <title>Steerable Scene Generation with Post Training and Inference-Time Search</title>
+
+
+
+  <!-- <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.0.1/model-viewer.min.js"></script> -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+  <script src="https://unpkg.com/interactjs/dist/interact.min.js"></script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" type="text/css" href="./static/slick/slick.css" />
+  <link rel="stylesheet" type="text/css" href="./static/slick/slick-theme.css" />
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@creativebulma/bulma-tooltip@1.2.0/dist/bulma-tooltip.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+  <script src="./static/js/vis.js" defer></script>
+  <script type="text/javascript" src="./static/slick/slick.min.js"></script>
+
+  <!-- Prevent model-viewer interactions from triggering carousel navigation -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('model-viewer').forEach(viewer => {
+        viewer.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+        viewer.addEventListener('mousedown', e => e.stopPropagation());
+        viewer.addEventListener('pointerdown', e => e.stopPropagation());
+      });
+    });
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+
+
+<body>
+
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+
+  </nav>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">
+              Steerable Scene Generation with<br>Post Training and Inference-Time Search
+            </h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                Anonymous Authors for CoRL 2025 Review
+              </span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark has-tooltip-top"
+                    style="color: gray; pointer-events: auto; cursor: default;" data-tooltip="Hidden for anonymity">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark has-tooltip-top"
+                    style="color: gray; pointer-events: auto; cursor: default;" data-tooltip="Hidden for anonymity">
+                    <span class="icon">
+                      <i class="fas fa-download"></i>
+                    </span>
+                    <span>SE(3) Scene Dataset</span>
+                  </a>
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 0;">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full-width">
+          <video class="lazy-video" autoplay muted playsinline controls loop data-src="./static/videos/teaser.mp4"
+            style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+
+      <!-- System Diagram -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <h2 class="title is-3">System Overview</h2>
+          <img src="./static/images/teaser.webp">
+          <div class="content has-text-justified">
+            <p>
+              We train a diffusion-based generative model on SE(3) scenes generated by
+              procedural models, then adapt it to downstream objectives via reinforcement
+              learning-based post training, conditional generation, or inference-time search. The resulting scenes are
+              physically feasible and
+              fully interactable. We demonstrate teleoperated interaction in a subset of generated scenes using a mobile
+              KUKA iiwa robot.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!--/ System Diagram -->
+
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <!-- Abstract. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              Training robots in simulation requires diverse 3D scenes that reflect the
+              specific challenges of downstream tasks. However, scenes that satisfy strict
+              task requirements, such as high-clutter environments with plausible spatial
+              arrangement, are rare and costly to curate manually. Instead, we generate
+              large-scale scene data using procedural models that approximate realistic
+              environments for robotic manipulation, and adapt it to task-specific goals.
+              We do this by training a unified diffusion-based generative model that
+              predicts which objects to place from a fixed asset library, along with their
+              SE(3) poses. This model serves as a flexible scene prior that can be adapted
+              using reinforcement learning-based post training, conditional generation, or
+              inference-time search, steering generation toward downstream objectives even
+              when they differ from the original data distribution. Our method enables
+              goal-directed scene synthesis that respects physical feasibility and scales
+              across scene types. We introduce a novel MCTS-based inference-time search
+              strategy for diffusion models, enforce feasibility via projection and
+              simulation, and release a dataset of over 44 million SE(3) scenes spanning
+              five diverse environments.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!--/ Abstract. -->
+
+    </div>
+  </section>
+
+  <section class="section"></section>
+  <div class="container is-max-desktop">
+    <!-- Project Video. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Overview Video</h2>
+        <br>
+        <div class="content has-text-centered">
+          <div class="video-container" style="position: relative; width: 100%; aspect-ratio: 16 / 9;">
+            <img id="video-thumbnail" src="./static/images/youtube_thumbnail.jpg"
+              style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" alt="Video thumbnail" />
+            <div class="play-button"
+              style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.7); border-radius: 50%; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; cursor: pointer;">
+              <i class="fas fa-play" style="color: white; font-size: 24px;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--/ Project Video. -->
+  </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered">
+        <div class="column is-10">
+          <h2 class="title is-3 has-text-centered">Proof-of-Concept Teleoperation Videos</h2>
+          <div class="content has-text-centered">
+            <p>
+              The demonstrations below were collected in scenes generated by our pipeline, without any manual
+              scene modifications.<br>The environments are immediately simulation-ready and support realistic
+              interaction out of the box!
+
+              <br><br>
+
+              All demonstrations were performed using a mobile KUKA iiwa robot, controlled via a single SpaceMouse
+              device to command end-effector pose deltas, which were executed using differential inverse kinematics.
+              Some demonstrations show task-like behaviors, such as moving objects, while others emphasize the rich
+              interactivity of our scenes, for example by knocking over stacked items.
+            </p>
+          </div>
+          <br>
+
+          <div id="simulation-carousel" class="carousel results-carousel">
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/breakfast_low_clutter_3.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Pantry Shelf - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/pantry_3.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf after RL Post Training - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/living_rl_1.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Restaurant - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/restaurant_1.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table after RL Post Training - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/dimsum_rl_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table - 2</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/breakfast_high_clutter_3.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/living_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Pantry Shelf - 2</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/pantry_1.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/dimsum_3.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Restaurant - 2</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/restaurant_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table - 3</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/breakfast_high_clutter_1.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table - 2</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/dimsum_1.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf - 2</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/living_3.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Pantry Shelf - 3</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/pantry_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table - 4</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/breakfast_low_clutter_1.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf after RL Post Training - 2</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/living_rl_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table after RL Post Training - 2</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/dimsum_rl_1.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table - 5</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/breakfast_high_clutter_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table - 3</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/dimsum_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf after RL Post Training - 3</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/living_rl_3.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table - 6</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/breakfast_low_clutter_2.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table after RL Post Training - 3</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/dimsum_rl_3.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table - 7</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/breakfast_low_clutter_4.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf - 3</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <div class="video-wrapper"
+                    style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                    <video class="lazy-video" autoplay muted playsinline controls
+                      data-src="./static/teleop_videos/living_4.mp4"
+                      style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                    <div class="video-spinner"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <section class="section">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered">
+        <div class="column is-10">
+          <h2 class="title is-3 has-text-centered">Diffusion Trajectory Videos</h2>
+          <div class="content has-text-centered">
+            <p>
+              These videos show the generation process of our scene diffusion model.
+              <br>
+              The output starts from pure noise
+              in the scene representation and ends in the final scene before post processing.
+              Note that the number of objects, object types, and object poses change throughout the generation process.
+
+              <br><br>
+
+              We subsampled the initial generation steps as they are mostly noise due to our linear noise schedule.
+
+              <br><br>
+
+              We find the utensil crock in "Breakfast Table - 1" to be particularly interesting.
+            </p>
+          </div>
+          <br>
+
+          <div id="diffusion-videos-section">
+            <div id="simulation-carousel" class="carousel results-carousel">
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Restaurant - 1</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/restaurant_1.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Breakfast Table - 1</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/breakfast_1.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Living Room Shelf - 1</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/living_1.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Dimsum Table - 1</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/dimsum_1.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Pantry Shelf - 1</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/pantry_1.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Restaurant - 2</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/restaurant_2.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Breakfast Table - 2</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/breakfast_2.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Living Room Shelf - 2</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/living_2.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Dimsum Table - 2</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/dimsum_2.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="results-item">
+                <h2 class="title is-5 has-text-centered">Pantry Shelf - 2</h2>
+                <div class="column">
+                  <div class="content is-centered">
+                    <div class="video-wrapper"
+                      style="position: relative; display: inline-block; width: 100%; aspect-ratio: 16 / 9;">
+                      <video class="lazy-video" autoplay muted playsinline controls
+                        data-src="./static/diffusion_videos/pantry_2.mp4"
+                        style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;"></video>
+                      <div class="video-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <section class="section">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered">
+        <div class="column is-10">
+          <h2 class="title is-3 has-text-centered">Interactive Generated Scenes</h2>
+          <div class="content has-text-centered">
+            <p>
+              The following scenes were generated by our models. Use mouse controls to interact with the scenes.
+              <br>
+              Using the carousel, you can explore a wide variety of generated scenes, including those sampled from
+              models after reinforcement learning post training.
+            </p>
+          </div>
+          <br>
+
+          <div id="simulation-carousel" class="carousel results-carousel">
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Restaurant - 1</h2>
+              <div class="column">
+                <div class="content is-centered">
+                  <model-viewer class="is-centered"
+                    style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                    alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/restaurant_1.glb" ar
+                    camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                    ar-status="not-presenting">
+                  </model-viewer>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table (Low-Clutter Variant) - 1</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/breakfast_low_clutter_1.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf - 1</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/living_1.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table - 1</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/dimsum_1.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Pantry Shelf - 1</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/pantry_1.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf after RL Post Training (Clutter Reward) - 1
+              </h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);""
+                  alt=" Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/living_rl_1.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table after RL Post Training (Clutter Reward) - 1</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/dimsum_rl_1.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Restaurant - 2</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/restaurant_2.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table (High-Clutter Variant) - 1</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/breakfast_high_clutter_1.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf - 2</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/living_2.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table - 2</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/dimsum_2.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Pantry Shelf - 2</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/pantry_2.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf after RL Post Training (Clutter Reward) - 2
+              </h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/living_rl_2.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table after RL Post Training (Clutter Reward) - 2</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/dimsum_rl_2.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table (Low-Clutter Variant) - 2</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/breakfast_low_clutter_2.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf - 3</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/living_3.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table - 3</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/dimsum_3.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Pantry Shelf - 3</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/pantry_3.glb" ar camera-controls
+                  auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto" ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Living Room Shelf after RL Post Training (Clutter Reward) - 3
+              </h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/living_rl_3.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Dimsum Table after RL Post Training (Clutter Reward) - 3</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/dimsum_rl_3.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+            <div class="results-item">
+              <h2 class="title is-5 has-text-centered">Breakfast Table (High-Clutter Variant) - 2</h2>
+              <div class="content is-centered">
+                <model-viewer class="is-centered"
+                  style="width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; background: linear-gradient(#f0f0f0, #cfcfcf);"
+                  alt="Raw Mesh" loading="lazy" field-of-view="45" src="./static/models/breakfast_high_clutter_2.glb" ar
+                  camera-controls auto-rotate rotation-per-second="10deg" camera-orbit="auto auto auto"
+                  ar-status="not-presenting">
+                </model-viewer>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="content has-text-centered">
+      </div>
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <!-- <p>
+              This website is licensed under a <a rel="license"
+                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+                Commons Attribution-ShareAlike 4.0 International License</a>.
+            </p>
+            <p>
+              This means you are free to borrow the <a href="https://github.com/nerfies/nerfies.github.io">source
+                code</a> of this website,
+              we just ask that you link back to this page in the footer.
+              Please remember to remove the analytics code included in the header of the website which
+              you do not want on your website.
+            </p> -->
+            <p>
+              This webpage template is from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+            </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const videoContainer = document.querySelector('.video-container');
+      const thumbnail = document.getElementById('video-thumbnail');
+      const playButton = document.querySelector('.play-button');
+
+      function loadVideo() {
+        // Create video element
+        const video = document.createElement('video');
+
+        // Set video attributes
+        video.controls = true;
+        video.autoplay = false; // Change to false initially
+        video.preload = "auto";
+        video.playsInline = true;
+        video.setAttribute('controlsList', 'nodownload');
+
+        // Set styling
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'contain';
+        video.style.cursor = 'pointer';
+        video.style.zIndex = '10';
+
+        // Add loading indicator
+        const loadingSpinner = document.createElement('div');
+        loadingSpinner.className = 'loading-spinner';
+        loadingSpinner.style.position = 'absolute';
+        loadingSpinner.style.top = '50%';
+        loadingSpinner.style.left = '50%';
+        loadingSpinner.style.transform = 'translate(-50%, -50%)';
+        loadingSpinner.style.color = 'white';
+        loadingSpinner.textContent = 'Loading video...';
+
+        // Replace thumbnail with video and loading indicator
+        videoContainer.innerHTML = '';
+        videoContainer.appendChild(video);
+        videoContainer.appendChild(loadingSpinner);
+
+        // Set source with cache-busting
+        video.src = './static/videos/steerable_scene_gen_overview_video_high_quality.mp4?v=' + new Date().getTime();
+
+        // Wait for metadata to load before enabling controls
+        video.addEventListener('loadedmetadata', function () {
+          console.log('Metadata loaded, duration:', video.duration);
+          // Remove loading indicator
+          if (loadingSpinner.parentNode) {
+            loadingSpinner.parentNode.removeChild(loadingSpinner);
+          }
+
+          // Wait a bit more to ensure everything is ready
+          setTimeout(() => {
+            // Now it's safe to play
+            video.play().catch(e => console.error('Play error:', e));
+          }, 500);
+        });
+
+        // Handle errors
+        video.addEventListener('error', function (e) {
+          console.error('Video error:', e);
+          alert('Error loading video. Please try refreshing the page.');
+        });
+      }
+
+      // Add click event to both thumbnail and play button
+      thumbnail.addEventListener('click', loadVideo);
+      playButton.addEventListener('click', loadVideo);
+    });
+  </script>
+
+</body>
+
+</html>
